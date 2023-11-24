@@ -6,12 +6,15 @@ import plotly.graph_objects as go
 from dash import Dash, dcc, html, dash_table, Input, Output
 from flask import Flask
 from sklearn.ensemble import IsolationForest
+from sklearn.decomposition import PCA
+import plotly.express as px
 
 # Initialize Flask and Dash apps
 from sklearn.impute import SimpleImputer
 
-server = Flask(__name__)
-app = Dash(__name__, server=server)
+# Initialize Dash app
+app = Dash(__name__)
+server = app.server  # This is important for Gunicorn
 
 # App layout
 app.layout = html.Div([
@@ -115,13 +118,35 @@ def isolation_forest_outliers(df, cols):
     df_imputed = df.copy()
     df_imputed[cols] = imputer.fit_transform(df[cols])
 
+    # Apply Isolation Forest
     clf = IsolationForest(max_samples=100, random_state=1, contamination='auto')
     df_imputed['Outlier'] = clf.fit_predict(df_imputed[cols])
-    outlier_df = df_imputed[df_imputed['Outlier'] == -1]
+
+    # Filter out the outliers
+    outliers_df = df_imputed[df_imputed['Outlier'] == -1]
+
+    # Apply PCA to reduce to two dimensions
+    pca = PCA(n_components=2)
+    principal_components = pca.fit_transform(df_imputed[cols])
+    df_imputed[['PC1', 'PC2']] = principal_components
+
+    # Plot with Plotly
+    fig = px.scatter(df_imputed, x='PC1', y='PC2', color='Outlier',
+                     title="PCA - 2D Scatter Plot of Data with Outliers Highlighted",
+                     labels={'Outlier': 'Outlier (-1 for Outlier, 1 for Inlier)'})
+
+    # Generate a table of outliers
+    outliers_table = dash_table.DataTable(
+        outliers_df.to_dict('records'),
+        [{"name": i, "id": i} for i in outliers_df.columns],
+        style_table={'overflowX': 'scroll'}
+    )
 
     return html.Div([
-        html.H4('Outliers as Combination of all columns'),
-        dash_table.DataTable(outlier_df.to_dict('records'), [{"name": i, "id": i} for i in outlier_df.columns])
+        html.H4('Isolation Forest Outliers'),
+        html.Div(outliers_table),
+        html.H4('Isolation Forest Outliers with PCA Visualization'),
+        dcc.Graph(figure=fig)
     ])
 
 
