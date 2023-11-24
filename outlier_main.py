@@ -120,7 +120,7 @@ def isolation_forest_outliers(df, cols):
     outlier_df = df_imputed[df_imputed['Outlier'] == -1]
 
     return html.Div([
-        html.H4('Isolation Forest Outliers'),
+        html.H4('Outliers as Combination of all columns'),
         dash_table.DataTable(outlier_df.to_dict('records'), [{"name": i, "id": i} for i in outlier_df.columns])
     ])
 
