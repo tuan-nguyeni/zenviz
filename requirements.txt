@@ -6,3 +6,4 @@ numpy
 scipy
 scikit-learn
 gunicorn
+dash_bootstrap_components
