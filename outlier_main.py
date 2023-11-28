@@ -3,7 +3,7 @@ import io
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from dash import Dash, dcc, html, dash_table, Input, Output
+from dash import Dash, dcc, html, dash_table, Input, Output, State
 from flask import Flask
 from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
@@ -13,34 +13,57 @@ import plotly.express as px
 from sklearn.impute import SimpleImputer
 
 # Initialize Dash app
-app = Dash(__name__)
+external_stylesheets = ['https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css']
+
+app = Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server  # This is important for Gunicorn
 
 # App layout
 app.layout = html.Div([
+    # Title and Description
+    html.H1("Correct Data Errors in Seconds", style={'textAlign': 'center', 'marginTop': '20px'}),
+    html.P(
+        "Understand your data and the corresponding data quality by uploading your csv file. More formats"
+        "will be follow soon.",
+        style={'textAlign': 'center', 'marginBottom': '20px','fontSize': '20px'}),
+
+    # Modified File Upload Section
+    # Modified File Upload Section with Icon
     dcc.Upload(
         id='upload-data',
-        children=html.Div(['Drag and Drop or ', html.A('Select Files')]),
+        children=html.Div([
+            html.I(className="fa fa-upload", style={'fontSize': '24px', 'marginRight': '10px'}),
+            'Drop csv ',
+            html.A('here')
+        ], style={'fontSize': '20px'}),
         style={
             'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
+            'height': '200px',  # Increase height
+            'lineHeight': '100px',  # Adjust line height to match
+            'borderWidth': '2px',  # Make border thicker
             'borderStyle': 'dashed',
-            'borderRadius': '5px',
+            'borderRadius': '10px',  # Slightly rounder corners
             'textAlign': 'center',
-            'margin': '10px'
+            'margin': '10px',
+            'color': '#007bff',  # Optional: Change text color
+            'borderColor': '#007bff'  # Optional: Change border color
         },
         multiple=False
     ),
+
+# New Description Below Upload Section
+    html.P(
+        "Choose what you want to see by clicking on it",
+        style={'textAlign': 'center', 'marginTop': '10px', 'marginBottom': '20px','fontSize': '20px'}
+    ),
     dcc.Tabs([
-        dcc.Tab(label='Full Data', children=[
+        dcc.Tab(label='See the full dataset', children=[
             html.Div(id='full-data-table')
         ]),
-        dcc.Tab(label='Missing Data', children=[
+        dcc.Tab(label='See missing values', children=[
             html.Div(id='missing-data-container')
         ]),
-        dcc.Tab(label='Outliers', children=[
+        dcc.Tab(label='See outliers', children=[
             html.Div(id='outlier-data-container'),
             dcc.Dropdown(
                 id='isolation-method-dropdown',
@@ -52,12 +75,49 @@ app.layout = html.Div([
             ),
             html.Div(id='isolation-outlier-data-container')
         ]),
-        dcc.Tab(label='Column Analysis', children=[
+        dcc.Tab(label='See duplicates', children=[
+            html.Div([
+
+                html.Div(id='duplicates-output')
+            ])
+        ]),
+        dcc.Tab(label='Visualize errors', children=[
             dcc.Dropdown(id='analysis-column-dropdown'),
             html.Div(id='column-analysis-container')
         ])
     ])
 ])
+# ... [previous code] ...
+
+@app.callback(
+    Output('duplicates-output', 'children'),
+    Input('upload-data', 'contents')
+)
+def auto_detect_duplicates(contents):
+    if contents is None:
+        return 'Upload a file to detect duplicates.'
+
+    df = parse_contents(contents)
+    if df is None:
+        return 'Error in processing file.'
+
+    # Detecting duplicates
+    duplicate_rows = df[df.duplicated(keep=False)]
+    if duplicate_rows.empty:
+        return 'No duplicates found.'
+
+    return html.Div([
+        html.H4('Duplicate Rows'),
+        dash_table.DataTable(
+            duplicate_rows.to_dict('records'),
+            [{"name": i, "id": i} for i in duplicate_rows.columns],
+            style_table={'overflowX': 'scroll'}
+        )
+    ])
+
+# ... [rest of the code] ...
+
+
 
 @app.callback(
     Output('missing-data-container', 'children'),
@@ -143,10 +203,10 @@ def isolation_forest_outliers(df, cols):
     )
 
     return html.Div([
-        html.H4('Isolation Forest Outliers'),
+        html.H4('Outlier detection using AI'),
         html.Div(outliers_table),
-        html.H4('Isolation Forest Outliers with PCA Visualization'),
-        dcc.Graph(figure=fig)
+        #html.H4('Isolation Forest Outliers with PCA Visualization'),
+        #dcc.Graph(figure=fig)
     ])
 
 
