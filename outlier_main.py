@@ -12,49 +12,67 @@ import plotly.express as px
 # Initialize Flask and Dash apps
 from sklearn.impute import SimpleImputer
 
+import dash_bootstrap_components as dbc
+
 # Initialize Dash app
 external_stylesheets = ['https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css']
 
-app = Dash(__name__, external_stylesheets=external_stylesheets)
+#app = Dash(__name__, external_stylesheets=external_stylesheets)
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'])
 server = app.server  # This is important for Gunicorn
+
+
+# Use a Bootstrap theme for styling
 
 # App layout
 app.layout = html.Div([
+    # Header
+    dbc.NavbarSimple(
+        children=[
+            dbc.NavItem(dbc.NavLink("Home", href="#")),
+            #dbc.NavItem(dbc.NavLink("Features", href="#")),
+            #dbc.NavItem(dbc.NavLink("Pricing", href="#")),
+        ],
+        brand="ZenViz",
+        brand_href="#",
+        color="primary",
+        dark=True,
+    ),
+
     # Title and Description
     html.H1("Correct Data Errors in Seconds", style={'textAlign': 'center', 'marginTop': '20px'}),
     html.P(
-        "Understand your data and the corresponding data quality by uploading your csv file. More formats"
-        "will be follow soon.",
-        style={'textAlign': 'center', 'marginBottom': '20px','fontSize': '20px'}),
+        "Understand your data and the corresponding data quality by uploading your CSV file. More formats will follow soon.",
+        style={'textAlign': 'center', 'marginBottom': '20px'}
+    ),
 
-    # Modified File Upload Section
-    # Modified File Upload Section with Icon
+    # File Upload Section
     dcc.Upload(
         id='upload-data',
         children=html.Div([
             html.I(className="fa fa-upload", style={'fontSize': '24px', 'marginRight': '10px'}),
-            'Drop csv ',
+            'Drop CSV ',
             html.A('here')
         ], style={'fontSize': '20px'}),
         style={
             'width': '100%',
-            'height': '200px',  # Increase height
-            'lineHeight': '100px',  # Adjust line height to match
-            'borderWidth': '2px',  # Make border thicker
+            'height': '200px',
+            'lineHeight': '200px',
+            'borderWidth': '2px',
             'borderStyle': 'dashed',
-            'borderRadius': '10px',  # Slightly rounder corners
+            'borderRadius': '10px',
             'textAlign': 'center',
             'margin': '10px',
-            'color': '#007bff',  # Optional: Change text color
-            'borderColor': '#007bff'  # Optional: Change border color
+            'color': '#007bff',
+            'borderColor': '#007bff'
         },
         multiple=False
     ),
 
-# New Description Below Upload Section
+    # Additional Description
     html.P(
         "Choose what you want to see by clicking on it",
-        style={'textAlign': 'center', 'marginTop': '10px', 'marginBottom': '20px','fontSize': '20px'}
+        style={'textAlign': 'center', 'marginTop': '10px', 'marginBottom': '20px'}
     ),
     dcc.Tabs([
         dcc.Tab(label='See the full dataset', children=[
