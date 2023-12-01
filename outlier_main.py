@@ -3,7 +3,7 @@ import io
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from dash import Dash, dcc, html, dash_table, Input, Output, State
+from dash import Dash, dcc, html, dash_table, Input, Output, State, dash
 from flask import Flask
 from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
@@ -21,8 +21,8 @@ external_stylesheets = ['https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'])
 server = app.server  # This is important for Gunicorn
 
-
-# Use a Bootstrap theme for styling
+download_button = html.Button("Download CSV", id="btn-download-csv")
+download_link = dcc.Download(id="download-dataframe-csv")
 
 # App layout
 app.layout = html.Div([
@@ -74,10 +74,17 @@ app.layout = html.Div([
         "Choose what you want to see by clicking on it",
         style={'textAlign': 'center', 'marginTop': '10px', 'marginBottom': '20px'}
     ),
+    download_button,
+    download_link,
     dcc.Tabs([
         dcc.Tab(label='See the full dataset', children=[
-            html.Div(id='full-data-table')
-        ]),
+            dash_table.DataTable(
+                id='full-data-table',
+                editable=True,  # Enable editing
+            )
+
+        ])
+        ,
         dcc.Tab(label='See missing values', children=[
             html.Div(id='missing-data-container')
         ]),
@@ -240,21 +247,23 @@ def parse_contents(contents):
     except Exception as e:
         return html.Div(['There was an error processing this file.'])
 
+
 @app.callback(
-    [Output('full-data-table', 'children'),
+    [Output('full-data-table', 'data'),
+     Output('full-data-table', 'columns'),  # Add this line to update the columns
      Output('analysis-column-dropdown', 'options')],
     Input('upload-data', 'contents')
 )
 def display_full_data(contents):
     if contents is not None:
         df = parse_contents(contents)
+        columns = [{"name": i, "id": i} for i in df.columns]  # Define columns for DataTable
         options = [{'label': col, 'value': col} for col in df.columns]
-        return dash_table.DataTable(
-            df.to_dict('records'),
-            [{"name": i, "id": i} for i in df.columns],
-            style_table={'overflowX': 'scroll'}
-        ), options
-    return 'Please upload a file to see the data.', []
+
+        return df.to_dict('records'), columns, options
+
+    return [], [], []  # Return empty lists if no contents
+
 
 @app.callback(
     Output('outlier-data-container', 'children'),
@@ -319,5 +328,19 @@ def column_analysis(df, col):
 
     return html.Div(analysis_info)
 
+@app.callback(
+    Output("download-dataframe-csv", "data"),
+    Input("btn-download-csv", "n_clicks"),
+    State('full-data-table', 'data'),  # Assuming 'full-data-table' is now a DataTable
+    prevent_initial_call=True
+)
+def download_edited_data(n_clicks, table_data):
+    if n_clicks is None:
+        raise dash.exceptions.PreventUpdate
+
+    df = pd.DataFrame.from_records(table_data)
+    return dcc.send_data_frame(df.to_csv, filename="edited_data.csv", index=False)
+
+
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8051)
