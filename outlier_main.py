@@ -15,11 +15,10 @@ from sklearn.impute import SimpleImputer
 import dash_bootstrap_components as dbc
 
 # Initialize Dash app
-external_stylesheets = ['https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css']
-
-#app = Dash(__name__, external_stylesheets=external_stylesheets)
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'])
+app.title = 'ZenViz'  # Set the title here
 server = app.server  # This is important for Gunicorn
+
 
 download_button = html.Button("Download CSV", id="btn-download-csv")
 download_link = dcc.Download(id="download-dataframe-csv")
@@ -27,11 +26,13 @@ download_link = dcc.Download(id="download-dataframe-csv")
 # App layout
 app.layout = html.Div([
     # Header
+    # Header
     dbc.NavbarSimple(
         children=[
             dbc.NavItem(dbc.NavLink("Home", href="#")),
-            #dbc.NavItem(dbc.NavLink("Features", href="#")),
-            #dbc.NavItem(dbc.NavLink("Pricing", href="#")),
+            dbc.NavItem(dbc.NavLink("About Us", href="https://clean-your-data.com/")),
+            dbc.NavItem(dbc.NavLink("Contact Us",
+                                    href="https://forms.monday.com/forms/52f24ae10b0aa29b110b0dc2e1d37af1?r=euc1"))
         ],
         brand="ZenViz",
         brand_href="#",
@@ -40,7 +41,7 @@ app.layout = html.Div([
     ),
 
     # Title and Description
-    html.H1("Correct Data Errors in Seconds", style={'textAlign': 'center', 'marginTop': '20px'}),
+    html.H1("Visualizing Data Errors in Seconds", style={'textAlign': 'center', 'marginTop': '20px'}),
     html.P(
         "Understand your data and the corresponding data quality by uploading your CSV file. More formats will follow soon.",
         style={'textAlign': 'center', 'marginBottom': '20px'}
@@ -106,7 +107,7 @@ app.layout = html.Div([
                 html.Div(id='duplicates-output')
             ])
         ]),
-        dcc.Tab(label='Visualize errors', children=[
+        dcc.Tab(label='Data Visualization', children=[
             dcc.Dropdown(id='analysis-column-dropdown'),
             html.Div(id='column-analysis-container')
         ])
