@@ -9,6 +9,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
 import plotly.express as px
 import logging
+import ydata_profiling
 
 from sklearn.impute import SimpleImputer
 
@@ -86,8 +87,12 @@ app.layout = html.Div([
                 editable=True,  # Enable editing
             )
 
+        ]),
+        dcc.Tab(label='Data Profile', children=[
+            html.Iframe(id='profile-report-container', style={"width": "100%", "height": "100vh"})
         ])
         ,
+
         dcc.Tab(label='See missing values', children=[
             html.Div(id='missing-data-container')
         ]),
@@ -346,6 +351,26 @@ def download_edited_data(n_clicks, table_data):
 
     df = pd.DataFrame.from_records(table_data)
     return dcc.send_data_frame(df.to_csv, filename="edited_data.csv", index=False)
+
+def generate_profile_report(df):
+    # Generate the report
+    profile = ydata_profiling.ProfileReport(df)
+    # Convert the report to HTML
+    report_html = profile.to_html()
+    return report_html
+
+@app.callback(
+    Output('profile-report-container', 'srcDoc'),
+    Input('upload-data', 'contents')
+)
+def update_profile_report(contents):
+    if contents is not None:
+        df = parse_contents(contents)
+        if df is not None:
+            report_html = generate_profile_report(df)
+            return report_html
+    return 'Please upload data to generate profile report.'
+
 
 
 if __name__ == '__main__':
