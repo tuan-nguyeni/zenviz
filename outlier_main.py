@@ -8,11 +8,12 @@ from flask import Flask
 from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
 import plotly.express as px
+import logging
 
-# Initialize Flask and Dash apps
 from sklearn.impute import SimpleImputer
 
 import dash_bootstrap_components as dbc
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 # Initialize Dash app
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'])
@@ -145,13 +146,13 @@ def auto_detect_duplicates(contents):
 # ... [rest of the code] ...
 
 
-
 @app.callback(
     Output('missing-data-container', 'children'),
     Input('upload-data', 'contents')
 )
 def display_missing_data(contents):
     if contents is not None:
+        logging.info('display_missing_data called')
         df = parse_contents(contents)
         if df is not None:
             # Check for missing data
@@ -258,6 +259,7 @@ def parse_contents(contents):
 )
 def display_full_data(contents):
     if contents is not None:
+        logging.info('display_full_data called')
         df = parse_contents(contents)
         columns = [{"name": i, "id": i} for i in df.columns]  # Define columns for DataTable
         options = [{'label': col, 'value': col} for col in df.columns]
@@ -294,9 +296,11 @@ def display_outliers(contents):
 )
 def update_column_analysis(column_name, contents):
     if contents is not None and column_name is not None:
+        logging.info(f"column: {column_name} called")
         df = parse_contents(contents)
         return column_analysis(df, column_name)
     return 'Select a column for analysis.'
+
 
 def is_numeric(col):
     return pd.api.types.is_numeric_dtype(col)
