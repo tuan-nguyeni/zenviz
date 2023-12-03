@@ -17,6 +17,7 @@ import dash_bootstrap_components as dbc
 # Initialize Dash app
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'])
 app.title = 'ZenViz'  # Set the title here
+app.index_string = open('custom_index_string.html').read()
 server = app.server  # This is important for Gunicorn
 
 
