@@ -248,10 +248,28 @@ def parse_contents(contents):
     decoded = base64.b64decode(content_string)
     try:
         if 'csv' in content_type:
-            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+            # Set chunksize to a suitable value
+            chunksize = 10000  # Example chunksize, adjust based on your needs
+
+            # Initialize an empty DataFrame for the chunks
+            full_data = pd.DataFrame()
+
+            for chunk in pd.read_csv(io.StringIO(decoded.decode('utf-8')), chunksize=chunksize):
+                # Optimize data types
+                for col in chunk.columns:
+                    if chunk[col].dtype == 'object':
+                        num_unique_values = len(chunk[col].unique())
+                        num_total_values = len(chunk[col])
+                        if num_unique_values / num_total_values < 0.5:
+                            chunk[col] = chunk[col].astype('category')
+
+                # Append chunk to full data
+                full_data = pd.concat([full_data, chunk])
+
+            return full_data
+
         else:
             return html.Div(['File format not supported.'])
-        return df
     except Exception as e:
         return html.Div(['There was an error processing this file.'])
 

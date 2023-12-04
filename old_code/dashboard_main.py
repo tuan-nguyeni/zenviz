@@ -11,7 +11,7 @@ app = Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 def process_data():
     # Load valid data from CSV
-    df_valid = pd.read_csv("01_data/german_people_dataset.csv")
+    df_valid = pd.read_csv("../01_data/german_people_dataset.csv")
 
     # Manually add invalid data
     df_invalid = pd.DataFrame({
