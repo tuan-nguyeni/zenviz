@@ -1,1 +1,1 @@
-web: gunicorn outlier_main:app
+web: gunicorn outlier_main:server
