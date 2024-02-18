@@ -24,7 +24,7 @@ server = app.server  # This is important for Gunicorn
 
 
 #download_button = html.Button("Download CSV", id="btn-download-csv")
-download_link = dcc.Download(id="download-dataframe-csv")
+#download_link = dcc.Download(id="download-dataframe-csv")
 
 # App layout
 app.layout = html.Div([
@@ -78,8 +78,8 @@ app.layout = html.Div([
         "Choose what you want to see by clicking on it",
         style={'textAlign': 'center', 'marginTop': '10px', 'marginBottom': '20px'}
     ),
-    download_button,
-    download_link,
+    #download_button,
+    #download_link,
     dcc.Tabs([
         dcc.Tab(label='See the full dataset', children=[
             dash_table.DataTable(
