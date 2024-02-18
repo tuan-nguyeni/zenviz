@@ -23,7 +23,7 @@ app.index_string = open('custom_index_string.html').read()
 server = app.server  # This is important for Gunicorn
 
 
-download_button = html.Button("Download CSV", id="btn-download-csv")
+#download_button = html.Button("Download CSV", id="btn-download-csv")
 download_link = dcc.Download(id="download-dataframe-csv")
 
 # App layout
