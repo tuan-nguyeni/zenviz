@@ -29,7 +29,6 @@ server = app.server  # This is important for Gunicorn
 # App layout
 app.layout = html.Div([
     # Header
-    # Header
     dbc.NavbarSimple(
         children=[
             dbc.NavItem(dbc.NavLink("Home", href="#")),
@@ -89,8 +88,13 @@ app.layout = html.Div([
 
         ]),
         dcc.Tab(label='Data Profile', children=[
-            html.Iframe(id='profile-report-container', style={"width": "100%", "height": "100vh"})
+            dcc.Loading(
+                id="loading-profile",
+                children=[html.Iframe(id='profile-report-container', style={"width": "100%", "height": "100vh"})],
+                type="default",  # You can use "circle", "cube", "dot", or "default"
+            )
         ])
+
         ,
 
         dcc.Tab(label='See missing values', children=[
@@ -100,13 +104,9 @@ app.layout = html.Div([
             html.Div(id='outlier-data-container'),
             dcc.Dropdown(
                 id='isolation-method-dropdown',
-                options=[
-                    {'label': 'All Columns', 'value': 'all'},
-                    {'label': 'Numeric Columns Only', 'value': 'numeric'}
-                ],
                 value='all'
             ),
-            html.Div(id='isolation-outlier-data-container')
+            #html.Div(id='isolation-outlier-data-container')
         ]),
         dcc.Tab(label='See duplicates', children=[
             html.Div([
@@ -184,64 +184,6 @@ def generate_missing_data_table(df):
         [{"name": i, "id": i} for i in df.columns],
         style_data_conditional=style_data_conditional
     )
-
-
-@app.callback(
-    Output('isolation-outlier-data-container', 'children'),
-    [Input('isolation-method-dropdown', 'value'),
-     Input('upload-data', 'contents')]
-)
-def display_isolation_forest_outliers(method, contents):
-    if contents is not None:
-        df = parse_contents(contents)
-        if df is not None:
-            if method == 'all':
-                # Apply Isolation Forest to all columns
-                numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
-                return isolation_forest_outliers(df, numeric_cols)
-            elif method == 'numeric':
-                # Apply Isolation Forest to numeric columns only
-                numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
-                return isolation_forest_outliers(df, numeric_cols)
-    return 'Please upload data and select a method.'
-
-def isolation_forest_outliers(df, cols):
-    # Impute missing values with median for numeric columns
-    imputer = SimpleImputer(strategy='median')
-    df_imputed = df.copy()
-    df_imputed[cols] = imputer.fit_transform(df[cols])
-
-    # Apply Isolation Forest
-    clf = IsolationForest(max_samples=100, random_state=1, contamination='auto')
-    df_imputed['Outlier'] = clf.fit_predict(df_imputed[cols])
-
-    # Filter out the outliers
-    outliers_df = df_imputed[df_imputed['Outlier'] == -1]
-
-    # Apply PCA to reduce to two dimensions
-    pca = PCA(n_components=2)
-    principal_components = pca.fit_transform(df_imputed[cols])
-    df_imputed[['PC1', 'PC2']] = principal_components
-
-    # Plot with Plotly
-    fig = px.scatter(df_imputed, x='PC1', y='PC2', color='Outlier',
-                     title="PCA - 2D Scatter Plot of Data with Outliers Highlighted",
-                     labels={'Outlier': 'Outlier (-1 for Outlier, 1 for Inlier)'})
-
-    # Generate a table of outliers
-    outliers_table = dash_table.DataTable(
-        outliers_df.to_dict('records'),
-        [{"name": i, "id": i} for i in outliers_df.columns],
-        style_table={'overflowX': 'scroll'}
-    )
-
-    return html.Div([
-        html.H4('Outlier detection using AI'),
-        html.Div(outliers_table),
-        #html.H4('Isolation Forest Outliers with PCA Visualization'),
-        #dcc.Graph(figure=fig)
-    ])
-
 
 def parse_contents(contents):
     content_type, content_string = contents.split(',')
@@ -357,19 +299,6 @@ def column_analysis(df, col):
 
     return html.Div(analysis_info)
 
-@app.callback(
-    Output("download-dataframe-csv", "data"),
-    Input("btn-download-csv", "n_clicks"),
-    State('full-data-table', 'data'),  # Assuming 'full-data-table' is now a DataTable
-    prevent_initial_call=True
-)
-def download_edited_data(n_clicks, table_data):
-    if n_clicks is None:
-        raise dash.exceptions.PreventUpdate
-
-    df = pd.DataFrame.from_records(table_data)
-    return dcc.send_data_frame(df.to_csv, filename="edited_data.csv", index=False)
-
 def generate_profile_report(df):
     # Generate the report
     profile = ydata_profiling.ProfileReport(df)
@@ -387,7 +316,9 @@ def update_profile_report(contents):
         if df is not None:
             report_html = generate_profile_report(df)
             return report_html
-    return 'Please upload data to generate profile report.'
+    # Instead of returning a static message, return None to keep the loading spinner active
+    # until the report is generated.
+    return None
 
 
 
